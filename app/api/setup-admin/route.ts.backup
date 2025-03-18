@@ -1,0 +1,87 @@
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import bcrypt from 'bcrypt';
+
+export async function POST(req: NextRequest) {
+  // This is a temporary endpoint for setting up an admin account
+  // You should remove this in production once you've set up your admin
+  
+  try {
+    const data = await req.json();
+    const { email, password, adminKey } = data;
+    
+    // Simple security check - require an admin key to use this endpoint
+    // Set this to a secure value or use an environment variable
+    const ADMIN_SETUP_KEY = 'secure-setup-key-123'; // You should change this
+    
+    if (adminKey !== ADMIN_SETUP_KEY) {
+      return NextResponse.json({ error: 'Invalid admin key' }, { status: 401 });
+    }
+    
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    }
+    
+    // Check if a user with this email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    if (existingUser) {
+      // Update the existing user to be an admin with the new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const updatedUser = await prisma.user.update({
+        where: { email },
+        data: {
+          password: hashedPassword,
+          isAdmin: true,
+          emailVerified: new Date(), // Mark as verified
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          isAdmin: true,
+        },
+      });
+      
+      return NextResponse.json({
+        message: 'Admin user updated successfully',
+        user: updatedUser,
+      });
+    } else {
+      // Create a new admin user
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name: 'Admin User',
+          isAdmin: true,
+          subscriptionStatus: 'vip',
+          credits: 9999,
+          emailVerified: new Date(), // Mark as verified
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          isAdmin: true,
+        },
+      });
+      
+      return NextResponse.json({
+        message: 'Admin user created successfully',
+        user: newUser,
+      }, { status: 201 });
+    }
+  } catch (error) {
+    console.error('Error setting up admin:', error);
+    return NextResponse.json(
+      { error: 'Failed to set up admin user' },
+      { status: 500 }
+    );
+  }
+}

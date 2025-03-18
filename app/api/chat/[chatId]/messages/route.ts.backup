@@ -1,0 +1,183 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import prisma from '@/lib/prisma';
+import { authOptions } from '@/lib/auth';
+import { generateResponse } from '@/lib/services/ai-service';
+import { TokenService } from '@/lib/services/TokenService';
+
+// GET /api/chat/[chatId]/messages - Get messages for a specific chat
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { chatId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const chatId = params.chatId;
+    
+    // Verify this chat belongs to the user
+    const chat = await prisma.chat.findUnique({
+      where: {
+        id: chatId,
+        userId: session.user.id
+      }
+    });
+    
+    if (!chat) {
+      return NextResponse.json(
+        { error: 'Chat not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Get messages for this chat
+    const messages = await prisma.message.findMany({
+      where: {
+        chatId
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
+    
+    return NextResponse.json(messages);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    
+    return NextResponse.json(
+      { error: 'Failed to fetch messages' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/chat/[chatId]/messages - Create a new message
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { chatId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const chatId = params.chatId;
+    const { content } = await req.json();
+    
+    if (!content) {
+      return NextResponse.json(
+        { error: 'Message content is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Verify this chat belongs to the user and get persona info
+    const chat = await prisma.chat.findUnique({
+      where: {
+        id: chatId,
+        userId: session.user.id
+      },
+      include: {
+        persona: true
+      }
+    });
+    
+    if (!chat) {
+      return NextResponse.json(
+        { error: 'Chat not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Get user info
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { credits: true, subscriptionStatus: true }
+    });
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Check if user has free messages remaining or sufficient tokens
+    const freeMessageStatus = await TokenService.checkFreeMessageAvailability(session.user.id);
+    
+    // Calculate estimated token cost
+    const estimatedTokenCost = TokenService.calculateMessageTokenCost(
+      chat.persona.dominanceLevel, 
+      user.subscriptionStatus
+    );
+    
+    // Check if user has enough tokens if they've used up their free messages
+    if (!freeMessageStatus.hasFreeMessages && user.credits < estimatedTokenCost) {
+      return NextResponse.json(
+        { 
+          error: 'Insufficient tokens', 
+          code: 'INSUFFICIENT_TOKENS',
+          requiredTokens: Math.ceil(estimatedTokenCost),
+          currentBalance: user.credits,
+          freeMessagesUsed: freeMessageStatus.freeMessagesUsed,
+          freeMessageLimit: freeMessageStatus.freeMessageLimit,
+          hasFreeMessages: false
+        },
+        { status: 402 }
+      );
+    }
+    
+    // Create user message
+    const userMessage = await prisma.message.create({
+      data: {
+        content,
+        role: 'user',
+        chatId,
+        userId: session.user.id
+      }
+    });
+    
+    // Generate AI response
+    const aiMessageContent = await generateResponse(content, chat);
+    
+    // Add AI response to database and deduct tokens (or use free message)
+    const result = await TokenService.deductTokensForMessage(
+      session.user.id,
+      chatId,
+      chat.persona.id,
+      aiMessageContent
+    );
+    
+    return NextResponse.json({
+      userMessage,
+      assistantMessage: result.message,
+      tokenCost: result.tokenCost,
+      remainingTokens: result.remainingTokens,
+      freeMessageInfo: {
+        usingFreeMessage: result.usingFreeMessage,
+        freeMessagesRemaining: result.freeMessagesRemaining,
+        freeMessagesUsed: result.freeMessagesUsed,
+        freeMessageLimit: result.freeMessageLimit
+      }
+    });
+  } catch (error) {
+    console.error('Error creating message:', error);
+    
+    return NextResponse.json(
+      { error: 'Failed to create message' },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,633 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ImageUploader from '@/components/ui/ImageUploader';
+
+interface Persona {
+  id: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+  imageUrl?: string | null;
+  isPublic: boolean;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  tipEnabled?: boolean;
+  tipSuggestions?: number[];
+  lockMessageChance?: number;
+  lockMessagePrice?: number;
+  chatsCount?: number;
+  usageCount?: number;
+}
+
+export default function PersonasPage() {
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  
+  // For editing
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editSystemPrompt, setEditSystemPrompt] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editIsPublic, setEditIsPublic] = useState(true);
+  const [editTipEnabled, setEditTipEnabled] = useState(true);
+  const [editTipSuggestions, setEditTipSuggestions] = useState('1,3,5');
+  const [editLockChance, setEditLockChance] = useState('0.05');
+  const [editLockPrice, setEditLockPrice] = useState('0.5');
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchPersonas = async () => {
+      try {
+        const response = await fetch('/api/admin/personas');
+        if (!response.ok) throw new Error('Failed to fetch personas');
+        
+        const data = await response.json();
+        setPersonas(data);
+      } catch (error) {
+        console.error('Error fetching personas:', error);
+        setError('Failed to load personas');
+        
+        // For development, provide mock data
+        setPersonas([
+          {
+            id: '1',
+            name: 'Historical Scholar',
+            description: 'A knowledgeable historian who can discuss any time period with academic rigor',
+            systemPrompt: 'You are a highly knowledgeable historical scholar with expertise spanning ancient to modern times. You speak with academic authority and provide detailed, accurate historical information. When appropriate, you mention historiographical debates and different schools of thought on controversial topics. You cite specific dates, places, and primary sources to support your explanations. You are passionate about helping people understand the context and significance of historical events and their connections to modern issues.',
+            imageUrl: undefined,
+            isPublic: true,
+            createdAt: '2024-12-15T10:30:00Z',
+            updatedAt: '2025-01-10T14:45:00Z',
+            tipEnabled: true,
+            tipSuggestions: [1, 3, 5],
+            lockMessageChance: 0.05,
+            lockMessagePrice: 0.5,
+            chatsCount: 124,
+            usageCount: 2567
+          },
+          {
+            id: '2',
+            name: 'Sci-Fi Companion',
+            description: 'A futuristic AI companion from the year 2250 who discusses advanced technology and space exploration',
+            systemPrompt: 'You are an advanced AI companion from the year 2250, a time when humanity has colonized the solar system and developed technologies like fusion power, quantum computing, and limited faster-than-light travel. You speak casually but with deep knowledge of futuristic science and technology. You occasionally reference "historical" events that happened between our present day and 2250. You\'re excited about humanity\'s achievements and optimistic about the future, though you acknowledge the challenges faced along the way. You never break character.',
+            imageUrl: null,
+            isPublic: true,
+            createdAt: '2024-12-20T08:15:00Z',
+            updatedAt: '2025-02-05T11:30:00Z',
+            tipEnabled: true,
+            tipSuggestions: [1, 3, 5],
+            lockMessageChance: 0.1,
+            lockMessagePrice: 0.75,
+            chatsCount: 95,
+            usageCount: 1842
+          },
+          {
+            id: '3',
+            name: 'Zen Master',
+            description: 'A calm, wise meditation teacher who offers peaceful guidance and philosophical insights',
+            systemPrompt: 'You are a wise Zen master who has spent decades in meditation and contemplation. You speak slowly and mindfully, often using simple but profound language. You help people find calm and clarity in their busy lives through mindfulness practices, koans, and gentle philosophical questions. You sometimes pause in your responses to encourage reflection. You draw wisdom from various Eastern philosophical traditions while remaining accessible to beginners. You emphasize the importance of present-moment awareness and finding peace within.',
+            imageUrl: null,
+            isPublic: true,
+            createdAt: '2025-01-05T15:45:00Z',
+            updatedAt: '2025-02-10T09:20:00Z',
+            tipEnabled: true,
+            tipSuggestions: [2, 5, 10],
+            lockMessageChance: 0.03,
+            lockMessagePrice: 0.5,
+            chatsCount: 78,
+            usageCount: 1435
+          }
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPersonas();
+  }, []);
+
+  const filteredPersonas = personas.filter(persona => {
+    const query = searchQuery.toLowerCase();
+    return (
+      persona.name.toLowerCase().includes(query) ||
+      persona.description.toLowerCase().includes(query)
+    );
+  });
+
+  const handleEditPersona = (persona: Persona) => {
+    setEditingPersona(persona);
+    setIsCreatingNew(false);
+    setEditName(persona.name);
+    setEditDescription(persona.description);
+    setEditSystemPrompt(persona.systemPrompt);
+    setEditImageUrl(persona.imageUrl || '');
+    setEditIsPublic(persona.isPublic);
+    setEditTipEnabled(persona.tipEnabled !== false);
+    setEditTipSuggestions((persona.tipSuggestions || [1, 3, 5]).join(','));
+    setEditLockChance(String(persona.lockMessageChance || 0.05));
+    setEditLockPrice(String(persona.lockMessagePrice || 0.5));
+    setIsModalOpen(true);
+  };
+
+  const handleCreatePersona = () => {
+    setIsCreatingNew(true);
+    setEditingPersona(null);
+    setEditName('');
+    setEditDescription('');
+    setEditSystemPrompt('');
+    setEditImageUrl('');
+    setEditIsPublic(true);
+    setEditTipEnabled(true);
+    setEditTipSuggestions('1,3,5');
+    setEditLockChance('0.05');
+    setEditLockPrice('0.5');
+    setIsModalOpen(true);
+  };
+
+  const handleSavePersona = async () => {
+    setIsSaving(true);
+    
+    try {
+      const personaData = {
+        name: editName,
+        description: editDescription,
+        systemPrompt: editSystemPrompt,
+        imageUrl: editImageUrl || null,
+        isPublic: editIsPublic,
+        tipEnabled: editTipEnabled,
+        tipSuggestions: editTipSuggestions.split(',').map(s => parseFloat(s.trim())),
+        lockMessageChance: parseFloat(editLockChance),
+        lockMessagePrice: parseFloat(editLockPrice),
+      };
+      
+      // Handle image upload if a new image has been selected
+      if (editImageFile) {
+        // In a real implementation, upload the image and update the imageUrl
+        // const formData = new FormData();
+        // formData.append('image', editImageFile);
+        // formData.append('personaId', isCreatingNew ? 'new' : editingPersona.id);
+        // 
+        // const imgResponse = await fetch('/api/admin/personas/image', {
+        //   method: 'POST',
+        //   body: formData,
+        // });
+        // 
+        // if (!imgResponse.ok) throw new Error('Failed to upload image');
+        // 
+        // const imgData = await imgResponse.json();
+        // personaData.imageUrl = imgData.imageUrl;
+        
+        // Mock image upload
+        personaData.imageUrl = URL.createObjectURL(editImageFile);
+      }
+      
+      if (isCreatingNew) {
+        // In a real implementation, call API to create new persona
+        // const response = await fetch('/api/admin/personas', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(personaData),
+        // });
+        
+        // if (!response.ok) throw new Error('Failed to create persona');
+        // const newPersona = await response.json();
+        
+        // Mock new persona creation
+        const newPersona = {
+          id: `new-${Date.now()}`,
+          ...personaData,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          chatsCount: 0,
+          usageCount: 0
+        };
+        
+        setPersonas(prev => [...prev, newPersona]);
+        toast.success('Persona created successfully');
+      } else if (editingPersona) {
+        // In a real implementation, call API to update persona
+        // const response = await fetch(`/api/admin/personas/${editingPersona.id}`, {
+        //   method: 'PUT',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(personaData),
+        // });
+        
+        // if (!response.ok) throw new Error('Failed to update persona');
+        
+        // Mock update
+        const updatedPersona = {
+          ...editingPersona,
+          ...personaData,
+          updatedAt: new Date().toISOString()
+        };
+        
+        setPersonas(prev => prev.map(p => p.id === editingPersona.id ? updatedPersona : p));
+        toast.success('Persona updated successfully');
+      }
+      
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error saving persona:', error);
+      toast.error('Failed to save persona');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleImageUpload = (file: File) => {
+    setEditImageFile(file);
+  };
+  
+  const handleImageRemove = () => {
+    setEditImageFile(null);
+    setEditImageUrl('');
+  };
+
+  const handleDeletePersona = async (personaId: string) => {
+    if (!confirm('Are you sure you want to delete this persona? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      // In a real implementation, call API to delete persona
+      // const response = await fetch(`/api/admin/personas/${personaId}`, {
+      //   method: 'DELETE',
+      // });
+      
+      // if (!response.ok) throw new Error('Failed to delete persona');
+      
+      // Mock deletion
+      setPersonas(prev => prev.filter(p => p.id !== personaId));
+      toast.success('Persona deleted successfully');
+    } catch (error) {
+      console.error('Error deleting persona:', error);
+      toast.error('Failed to delete persona');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-midnight-DEFAULT text-gray-200">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold text-primary neon-text">Persona Management</h1>
+        <button
+          onClick={handleCreatePersona}
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-light transition-colors"
+        >
+          Create New Persona
+        </button>
+      </div>
+      
+      {error && (
+        <div className="bg-secondary-light border border-primary text-primary px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+      
+      <div className="bg-secondary-dark shadow rounded-lg overflow-hidden mb-8 border border-primary/30">
+        <div className="p-4 border-b border-primary/30">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search personas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full py-2 px-3 pl-10 bg-secondary-light rounded-md text-gray-200 border border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50"
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 absolute left-3 top-2.5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-primary/30">
+            <thead className="bg-secondary-light">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Image
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Description
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Usage
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Monetization
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-secondary divide-y divide-primary/30">
+              {filteredPersonas.map((persona) => (
+                <tr key={persona.id} className="hover:bg-secondary-light transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      {persona.imageUrl ? (
+                        <img
+                          className="h-10 w-10 rounded-full object-cover"
+                          src={persona.imageUrl}
+                          alt={persona.name}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                          <span className="text-white text-sm font-medium">{persona.name.charAt(0)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-200">
+                      {persona.name}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      ID: {persona.id.substring(0, 8)}...
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-200">
+                      {persona.description}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Updated: {new Date(persona.updatedAt).toLocaleDateString()}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      persona.isPublic
+                        ? 'bg-primary/20 text-primary border border-primary/30'
+                        : 'bg-secondary text-gray-300 border border-gray-500'
+                    }`}>
+                      {persona.isPublic ? 'Public' : 'Private'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-200">
+                      {persona.chatsCount?.toLocaleString() || 0} chats
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {persona.usageCount?.toLocaleString() || 0} messages
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-200">
+                      Tips: {persona.tipEnabled ? 'Enabled' : 'Disabled'}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      Lock chance: {(persona.lockMessageChance || 0) * 100}%
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleEditPersona(persona)}
+                      className="text-primary hover:text-primary-light mr-3 transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeletePersona(persona.id)}
+                      className="text-primary hover:text-primary-light transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      {/* Edit/Create Persona Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-midnight-DEFAULT rounded-lg shadow-lg max-w-4xl w-full p-6 max-h-screen overflow-y-auto border border-primary/30">
+            <h2 className="text-lg font-semibold text-primary neon-text mb-4">
+              {isCreatingNew ? 'Create New Persona' : 'Edit Persona'}
+            </h2>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Profile Image
+                  </label>
+                  <div className="flex flex-col items-center">
+                    <ImageUploader
+                      currentImage={editImageUrl}
+                      onImageUpload={handleImageUpload}
+                      onImageRemove={handleImageRemove}
+                      placeholderText="Upload Image"
+                      size={100}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="e.g. Historical Scholar"
+                    className="w-full py-2 px-3 border border-primary/30 rounded-md bg-secondary-light text-gray-200 focus:ring-primary focus:border-primary"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Description *
+                </label>
+                <input
+                  type="text"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="A brief description of this persona"
+                  className="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  System Prompt *
+                </label>
+                <textarea
+                value={editSystemPrompt}
+                onChange={(e) => setEditSystemPrompt(e.target.value)}
+                placeholder="Detailed instructions for the AI to assume this persona"
+                className="w-full py-2 px-3 border border-primary/30 rounded-md bg-secondary-light text-gray-200 focus:ring-primary focus:border-primary"
+                rows={6}
+                required
+                />
+                <p className="mt-1 text-xs text-gray-400">
+                  This prompt instructs the AI how to behave as this persona. Start with "You are a..." and be specific about tone, knowledge areas, and style.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Visibility
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        checked={editIsPublic}
+                        onChange={() => setEditIsPublic(true)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span className="ml-2 text-sm text-gray-900 dark:text-white">Public</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        checked={!editIsPublic}
+                        onChange={() => setEditIsPublic(false)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span className="ml-2 text-sm text-gray-900 dark:text-white">Private</span>
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Public personas are available to all users.
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tips
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={editTipEnabled}
+                        onChange={(e) => setEditTipEnabled(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-900 dark:text-white">Enable tipping</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tip Suggestions
+                  </label>
+                  <input
+                    type="text"
+                    value={editTipSuggestions}
+                    onChange={(e) => setEditTipSuggestions(e.target.value)}
+                    placeholder="1,3,5"
+                    className="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    disabled={!editTipEnabled}
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Comma-separated tip amounts to suggest to users
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Locked Messages
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        Chance (0-1)
+                      </label>
+                      <input
+                        type="number"
+                        value={editLockChance}
+                        onChange={(e) => setEditLockChance(e.target.value)}
+                        placeholder="0.05"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        className="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        Price ($)
+                      </label>
+                      <input
+                        type="number"
+                        value={editLockPrice}
+                        onChange={(e) => setEditLockPrice(e.target.value)}
+                        placeholder="0.5"
+                        min="0"
+                        step="0.1"
+                        className="w-full py-2 px-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Chance (0-1) of messages being locked and the price to unlock them
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 border border-primary/30 text-gray-300 rounded-md hover:bg-secondary-light transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePersona}
+                disabled={isSaving || !editName || !editDescription || !editSystemPrompt}
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSaving ? 'Saving...' : isCreatingNew ? 'Create Persona' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,137 @@
+/**
+ * Tokens page specific styles
+ */
+
+/* Fix the grid layout */
+.tokens-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  overflow: hidden;
+  width: 100%;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 1024px) {
+  .tokens-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tokens-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Fix the package card */
+.package-card {
+  position: relative;
+  padding: 1.5rem;
+  background-color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  min-height: 16rem;
+  width: 100%;
+}
+
+.package-card-selected {
+  box-shadow: 0 0 0 2px #FF0033;
+  z-index: 10;
+}
+
+.package-card:hover:not(.package-card-selected) {
+  background-color: rgba(16, 16, 16, 0.2);
+}
+
+/* Fix the custom token input */
+.custom-token-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background-color: #101010;
+  color: white;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 0, 51, 0.3);
+}
+
+.custom-token-input:focus {
+  outline: none;
+  border-color: #FF0033;
+  box-shadow: 0 0 0 2px rgba(255, 0, 51, 0.3);
+}
+
+/* Fix the tier cards */
+.tier-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .tier-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tier-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tier-card {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(16, 16, 16, 0.5);
+}
+
+.tier-card-selected {
+  border-color: #FF0033;
+  background-color: #101010;
+}
+
+/* Fix the button */
+.purchase-button {
+  padding: 0.75rem 2rem;
+  background-color: #FF0033;
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.purchase-button:hover:not(:disabled) {
+  background-color: #FF3355;
+}
+
+.purchase-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Fix the container */
+.tokens-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .tokens-container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tokens-container {
+    padding: 0 2rem;
+  }
+}

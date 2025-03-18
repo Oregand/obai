@@ -1,0 +1,52 @@
+/**
+ * Chat specific styles to handle overflow and layout
+ */
+
+/* Message content styling */
+.prose {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.prose pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.prose code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Ensure markdown tables don't break layout */
+.prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure images don't overflow */
+.prose img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* For extremely long words */
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
+/* Ensure chat container limits width properly */
+.chat-container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Ensure message box doesn't expand beyond container */
+.message-box {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}

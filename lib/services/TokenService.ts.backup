@@ -1,0 +1,43 @@
+/**
+ * Service for handling token-related operations
+ */
+class TokenService {
+  /**
+   * Check if a user has free messages available
+   * @param userId The user ID to check
+   * @returns Information about free message availability
+   */
+  async checkFreeMessageAvailability(userId: string) {
+    // Implementation would usually connect to a database
+    // This is a placeholder implementation
+    return {
+      hasFreeMessages: true,
+      freeMessagesUsed: 0,
+      freeMessagesRemaining: 10,
+      freeMessageLimit: 10
+    };
+  }
+
+  /**
+   * Calculate the token cost for a message based on persona dominance and user subscription
+   * @param dominanceLevel The dominance level of the persona
+   * @param subscriptionStatus The subscription status of the user
+   * @returns The calculated token cost
+   */
+  calculateMessageTokenCost(dominanceLevel: number, subscriptionStatus: string): number {
+    // Base cost depends on dominance level (higher dominance = higher cost)
+    const baseCost = 10 + (dominanceLevel * 2);
+    
+    // Apply discount based on subscription status
+    const discountFactor = subscriptionStatus === 'premium' ? 0.5 : 
+                          subscriptionStatus === 'basic' ? 0.8 : 1.0;
+    
+    return Math.round(baseCost * discountFactor);
+  }
+
+  // Other methods from the existing service would be here
+}
+
+// Export as a singleton
+export const TokenService = new TokenService();
+export default TokenService;

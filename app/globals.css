@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import sidebar styles */
+@import 'sidebar.css';
+
+:root {
+  --foreground-rgb: 220, 220, 220;
+  --background-start-rgb: 10, 10, 10;
+  --background-end-rgb: 18, 18, 18;
+  --primary-color: 255, 0, 51;
+  --primary-glow: 0 0 8px rgba(var(--primary-color), 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 220, 220, 220;
+    --background-start-rgb: 10, 10, 10;
+    --background-end-rgb: 18, 18, 18;
+    --primary-color: 255, 0, 51;
+    --primary-glow: 0 0 12px rgba(var(--primary-color), 0.8);
+  }
+}
+
+/* Reset and base styles */
+html, body {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+}
+
+#__next {
+  height: 100%;
+  width: 100%;
+}
+
+/* Red light district theme additions */
+.neon-text {
+  text-shadow: 0 0 5px rgba(255, 0, 51, 0.7), 0 0 10px rgba(255, 0, 51, 0.5);
+  color: #FF0033;
+}
+
+.neon-border {
+  box-shadow: 0 0 5px rgba(255, 0, 51, 0.7), 0 0 10px rgba(255, 0, 51, 0.5);
+  border-color: #FF0033;
+}
+
+.neon-glow {
+  filter: drop-shadow(0 0 8px rgba(255, 0, 51, 0.7));
+}
+
+.page-header {
+  @apply text-4xl font-bold text-primary neon-text;
+}
+
+.page-subheader {
+  @apply text-2xl font-semibold text-white opacity-90;
+}
+
+/* Button styling */
+.btn-primary {
+  @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-light transition-colors focus:outline-none focus:ring-2 focus:ring-primary-light focus:ring-opacity-50;
+}
+
+.btn-secondary {
+  @apply bg-secondary-light text-white px-4 py-2 rounded-md hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 border border-primary;
+}
+
+/* Markdown content styling */
+.prose {
+  @apply text-secondary-dark dark:text-white;
+}
+
+.prose p {
+  @apply mb-4;
+}
+
+.prose h1 {
+  @apply text-2xl font-bold mb-4 mt-6;
+}
+
+.prose h2 {
+  @apply text-xl font-bold mb-3 mt-5;
+}
+
+.prose h3 {
+  @apply text-lg font-bold mb-2 mt-4;
+}
+
+.prose ul {
+  @apply list-disc pl-5 mb-4;
+}
+
+.prose ol {
+  @apply list-decimal pl-5 mb-4;
+}
+
+.prose li {
+  @apply mb-1;
+}
+
+.prose a {
+  @apply text-primary hover:text-primary-light dark:text-primary dark:hover:text-primary-light;
+}
+
+.prose code {
+  @apply px-1 py-0.5 bg-secondary-light bg-opacity-20 dark:bg-secondary-light rounded;
+}
+
+.prose pre {
+  @apply p-3 bg-secondary-light bg-opacity-20 dark:bg-secondary rounded-lg mb-4 overflow-x-auto;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0;
+}
+
+.prose blockquote {
+  @apply pl-4 border-l-4 border-primary-dark/50 dark:border-primary-dark italic;
+}
+
+.prose img {
+  @apply max-w-full rounded-lg mx-auto my-4;
+}
+
+/* Global scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FF0033;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #FF0033;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #CC0022;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #FF3355;
+}

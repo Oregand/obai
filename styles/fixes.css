@@ -1,0 +1,32 @@
+/* 
+ * Minimal fixes for Next.js hydration and specific edge cases.
+ * Try to keep this file as small as possible and move anything that can be
+ * handled by Tailwind into the appropriate @layer in globals.css
+ */
+
+/* Fix for Next.js hydration flash */
+html {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Fix for Next.js scroll boundaries */
+[data-nextjs-scroll-focus-boundary] {
+  display: contents;
+}
+
+/* Mobile iOS tap highlight fix */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix for iOS safe areas on notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

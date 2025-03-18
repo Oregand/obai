@@ -1,0 +1,263 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String          @id @default(cuid())
+  name               String?
+  email              String?         @unique
+  emailVerified      DateTime?
+  password           String?
+  image              String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  accounts           Account[]          
+  sessions           Session[]          
+  chats              Chat[]             
+  messages           Message[]          
+  payments           Payment[]          
+  paymentMethods     UserPaymentMethod[]
+  subscriptionStatus String?         @default("free")
+  subscriptionExpiry DateTime?
+  credits            Float           @default(0) // Token balance for platform interactions
+  isAdmin            Boolean         @default(false)
+  receivedTips       Tip[]           @relation("ReceivedTips")
+  sentTips           Tip[]           @relation("SentTips")
+  messageUnlocks     MessageUnlock[]
+  subscriptions      Subscription[]
+  autoTopupSettings  AutoTopupSettings?
+  personaUsage       PersonaUsage[]
+  emailVerifications EmailVerification[]
+  twoFactorSecret    String?        // For 2FA
+  twoFactorEnabled   Boolean        @default(false)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Persona {
+  id                   String   @id @default(cuid())
+  name                 String
+  description          String
+  systemPrompt         String   @db.Text
+  imageUrl             String?
+  isPublic             Boolean  @default(true)
+  createdBy            String? // UserId of creator for custom personas
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  chats                Chat[]
+  tipEnabled           Boolean  @default(true)
+  tipSuggestions       Float[]  @default([1, 3, 5]) // Suggested tip amounts
+  lockMessageChance    Float    @default(0.05) // 5% chance to lock a message
+  lockMessagePrice     Float    @default(0.5) // Default price to unlock
+  tokenRatePerMessage  Float    @default(1.0) // Base token cost per message
+  tokenRatePerMinute   Float    @default(0.0) // Additional token cost per minute (if using voice)
+  isPremium            Boolean  @default(false) // Whether this persona requires subscription
+  dominanceLevel       Int      @default(1) // 1-5 scale for pricing tiers
+  exclusivityMultiplier Float    @default(1.0) // Price multiplier based on exclusivity
+  usageStats           PersonaUsage[]
+  analytics            PersonaAnalytics[]
+}
+
+model Chat {
+  id        String    @id @default(cuid())
+  title     String    @default("New Chat")
+  userId    String
+  personaId String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  persona   Persona   @relation(fields: [personaId], references: [id])
+  messages  Message[]
+  tips      Tip[]
+}
+
+model Message {
+  id            String          @id @default(cuid())
+  content       String          @db.Text
+  role          String          // user or assistant
+  chatId        String
+  userId        String
+  createdAt     DateTime        @default(now())
+  isLocked      Boolean         @default(false)
+  isFreeMessage  Boolean         @default(false) // Track if this was a free intro message
+  unlockPrice   Float?          // Price to unlock this message
+  tokenCost     Float           @default(0) // Tokens charged for this message
+  duration      Float?          // Duration in seconds (for voice messages)
+  tipped        Boolean         @default(false) // Whether this message received a tip
+  tipAmount     Float?          // Amount of tip received
+  chat          Chat            @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unlocks       MessageUnlock[]
+}
+
+model Payment {
+  id                String          @id @default(cuid())
+  userId            String
+  amount            Float
+  currency          String          @default("USD")
+  type              String          // token_purchase, subscription, tip
+  status            String          // pending, completed, failed
+  paymentMethod     String?         // crypto, paypal, etc.
+  paymentMethodId   String?         // Reference to UserPaymentMethod if crypto
+  paymentIntent     String?         // Payment provider reference ID
+  tokensAmount      Int?            // Number of tokens purchased
+  bonusTokens       Int?            // Any bonus tokens given
+  createdAt         DateTime        @default(now())
+  completedAt       DateTime?
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageUnlocks    MessageUnlock[]
+  tips              Tip[]
+  subscriptions     Subscription[]    // Relation to user subscriptions
+}
+
+model MessageUnlock {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  amount    Float
+  paymentId String?
+  createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+}
+
+model Tip {
+  id         String   @id @default(cuid())
+  amount     Float
+  chatId     String
+  fromUserId String
+  toUserId   String
+  paymentId  String?
+  message    String? // Optional message with the tip
+  createdAt  DateTime @default(now())
+  chat       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  fromUser   User     @relation("SentTips", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser     User     @relation("ReceivedTips", fields: [toUserId], references: [id], onDelete: Cascade)
+  payment    Payment? @relation(fields: [paymentId], references: [id])
+}
+
+model UserPaymentMethod {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // BTC, ETH, LTC, etc.
+  name      String   // Friendly name for this wallet
+  address   String   // Wallet address
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Subscription {
+  id                  String    @id @default(cuid())
+  userId              String
+  paymentId           String?
+  tier                String    // basic, premium, VIP
+  price               Float
+  status              String    // active, cancelled, expired
+  startDate           DateTime  @default(now())
+  endDate             DateTime
+  autoRenew           Boolean   @default(true)
+  bonusTokens         Int       @default(0)  // Monthly bonus tokens
+  exclusivePersonas   Boolean   @default(false)
+  discountMultiplier  Float     @default(1.0) // Discount on token purchases
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment             Payment?  @relation(fields: [paymentId], references: [id])
+
+  @@index([userId])
+}
+
+model AutoTopupSettings {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  enabled           Boolean   @default(false)
+  thresholdAmount   Float     @default(5.0)
+  packageId         String    // Reference to token package ID
+  paymentMethodId   String?   // Reference to UserPaymentMethod id
+  lastTopupAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// New models for persona analytics
+
+model PersonaUsage {
+  id        String   @id @default(cuid())
+  personaId String
+  userId    String
+  timestamp DateTime @default(now())
+  persona   Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([personaId])
+  @@index([userId])
+  @@index([timestamp])
+}
+
+model PersonaAnalytics {
+  id          String   @id @default(cuid())
+  personaId   String
+  day         DateTime @db.Date
+  usageCount  Int      @default(0)
+  messageCount Int     @default(0)
+  uniqueUsers Int      @default(0)
+  avgSessionDuration Float  @default(0)
+  persona     Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@unique([personaId, day])
+  @@index([personaId])
+  @@index([day])
+}
+
+model EmailVerification {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String
+  userId    String
+  expires   DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

@@ -1,0 +1,137 @@
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import { TOKEN_PACKAGES } from '@/lib/services/token-service';
+
+interface QuickTokenPurchaseProps {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const QuickTokenPurchase: React.FC<QuickTokenPurchaseProps> = ({ onClose, onSuccess }) => {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Default to the basic package for quick purchase
+  const basicPackage = TOKEN_PACKAGES.find(p => p.id === 'basic') || TOKEN_PACKAGES[0];
+  
+  // Handle quick purchase
+  const handleQuickPurchase = async () => {
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/tokens/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          packageId: basicPackage.id
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to initiate token purchase');
+      }
+      
+      // Token purchase initiated, route to complete the purchase
+      router.push('/tokens/purchase');
+    } catch (error) {
+      console.error('Error initiating token purchase:', error);
+      toast.error('Failed to initiate token purchase. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle navigation to full purchase page
+  const handleViewAllPackages = () => {
+    router.push('/tokens/purchase');
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-midnight-lighter rounded-lg shadow-lg w-full max-w-md overflow-hidden transform transition-all">
+        <div className="p-6">
+          <div className="flex justify-between items-start">
+            <h3 className="text-lg font-medium text-white">Quick Token Purchase</h3>
+            <button
+              onClick={onClose}
+              className="absolute top-2 right-2 text-white opacity-60 hover:text-primary transition-colors p-1 rounded-full hover:bg-secondary-light"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="mt-4">
+            <div className="bg-secondary-dark p-4 rounded-md">
+              <div className="flex justify-between">
+                <div>
+                  <span className="text-white font-medium">{basicPackage.name}</span>
+                  <p className="text-xs text-white opacity-70 mt-1">{basicPackage.description}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-bold text-primary">${basicPackage.price}</span>
+                </div>
+              </div>
+              
+              <div className="mt-3 flex justify-between items-center">
+                <div>
+                  <span className="text-white">Tokens:</span>
+                  <span className="text-white font-medium ml-1">{basicPackage.tokens}</span>
+                  {basicPackage.bonus > 0 && (
+                    <span className="text-primary ml-1">+{basicPackage.bonus} bonus</span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-white opacity-70 text-sm">Total:</span>
+                  <span className="text-white ml-1">{basicPackage.tokens + basicPackage.bonus} tokens</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleViewAllPackages}
+              className="py-2 px-4 flex items-center justify-center bg-transparent border border-primary/30 rounded-md text-primary hover:bg-primary/10 transition-colors text-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+              </svg>
+              View All Packages
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleQuickPurchase}
+              disabled={isLoading}
+              className="py-2 px-4 bg-primary rounded-md text-white hover:bg-primary-light transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+            >
+              {isLoading ? (
+                <>
+                  <LoadingSpinner size="small" />
+                  <span className="ml-2">Processing...</span>
+                </>
+              ) : (
+                <>Buy ${basicPackage.price} Package</>
+              )}
+            </button>
+          </div>
+          
+          <div className="mt-4 text-center text-xs text-white opacity-60">
+            Tokens are used for AI interactions. Purchase once, use anytime.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QuickTokenPurchase;

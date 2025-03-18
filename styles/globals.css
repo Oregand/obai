@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* All CSS is now consolidated in this file for better organization and to avoid @layer issues */
+
+@layer base {
+  :root {
+    --foreground-rgb: 220, 220, 220;
+    --background-start-rgb: 10, 10, 10;
+    --background-end-rgb: 18, 18, 18;
+  }
+  
+  body {
+    @apply text-white bg-midnight min-h-screen;
+  }
+  
+  /* Standardized scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-dark;
+  }
+  
+  .dark ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-light;
+  }
+}
+
+@layer components {
+  /* Neon effect utilities - keep minimal custom CSS */
+  .neon-text {
+    @apply text-primary;
+    text-shadow: 0 0 5px rgba(255, 0, 51, 0.7), 0 0 10px rgba(255, 0, 51, 0.5);
+  }
+  
+  .neon-border {
+    @apply border-primary;
+    box-shadow: 0 0 5px rgba(255, 0, 51, 0.7), 0 0 10px rgba(255, 0, 51, 0.5);
+  }
+  
+  /* Button components */
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-light transition-colors focus:outline-none focus:ring-2 focus:ring-primary-light focus:ring-opacity-50;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-light text-white px-4 py-2 rounded-md hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 border border-primary;
+  }
+  
+  /* Page elements */
+  .page-header {
+    @apply text-4xl font-bold text-primary neon-text;
+  }
+  
+  .page-subheader {
+    @apply text-2xl font-semibold text-white opacity-90;
+  }
+  
+  /* Sidebar footer with minimal custom CSS */
+  .sidebar-footer {
+    @apply sticky bottom-0 bg-midnight-darker z-10 border-t border-primary/20 min-h-[180px];
+  }
+
+  /* Hamburger menu components */
+  .hamburger-line {
+    @apply absolute h-0.5 w-full bg-current transform transition-all duration-300 ease-in-out;
+  }
+
+  .hamburger-top {
+    @apply top-1;
+  }
+  .hamburger-top-active {
+    @apply top-2.5 rotate-45;
+  }
+
+  .hamburger-middle {
+    @apply top-2.5;
+  }
+  .hamburger-middle-active {
+    @apply opacity-0;
+  }
+
+  .hamburger-bottom {
+    @apply top-4;
+  }
+  .hamburger-bottom-active {
+    @apply top-2.5 -rotate-45;
+  }
+
+  /* Focus trap for accessibility */
+  .focus-trap {
+    @apply outline-none;
+  }
+
+  .mobile-nav-item:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-midnight-darker outline-none;
+  }
+  
+  /* Prose styling for markdown content */
+  .prose {
+    @apply text-gray-200;
+  }
+  
+  .prose p {
+    @apply mb-4;
+  }
+  
+  .prose h1 {
+    @apply text-2xl font-bold mb-4 mt-6;
+  }
+  
+  .prose h2 {
+    @apply text-xl font-bold mb-3 mt-5;
+  }
+  
+  .prose h3 {
+    @apply text-lg font-bold mb-2 mt-4;
+  }
+  
+  .prose ul {
+    @apply list-disc pl-5 mb-4;
+  }
+  
+  .prose ol {
+    @apply list-decimal pl-5 mb-4;
+  }
+  
+  .prose li {
+    @apply mb-1;
+  }
+  
+  .prose a {
+    @apply text-primary hover:text-primary-light;
+  }
+  
+  .prose code {
+    @apply px-1 py-0.5 bg-secondary-light bg-opacity-20 rounded;
+  }
+  
+  .prose pre {
+    @apply p-3 bg-gray-800 rounded-lg mb-4 overflow-x-auto;
+  }
+  
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
+  
+  .prose blockquote {
+    @apply pl-4 border-l-4 border-primary-dark/50 italic;
+  }
+  
+  .prose img {
+    @apply max-w-full rounded-lg mx-auto my-4;
+  }
+}
+
+/* Touch target sizes for mobile - using media query since this is specific to mobile */
+@media (max-width: 640px) {
+  .mobile-nav-item {
+    @apply py-3; /* Larger touch targets on small devices */
+  }
+  
+  .hamburger-button {
+    @apply p-3 m-1; /* Minimum 44x44px touch target */
+  }
+}

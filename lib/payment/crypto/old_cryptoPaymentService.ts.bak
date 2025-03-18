@@ -1,0 +1,173 @@
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * This is a mock implementation of a crypto payment service
+ * In a real implementation, you would integrate with a service like CoinPayments, Coinbase Commerce, etc.
+ */
+
+interface PaymentIntent {
+  id: string;
+  status: 'pending' | 'processing' | 'succeeded' | 'failed';
+  client_secret: string; // URL to payment page or other auth token
+  payment_method: string; // Cryptocurrency type
+  amount: number;
+  currency: string;
+  metadata?: {
+    address?: string; // Crypto wallet address
+    qrcode_url?: string; // URL to QR code image
+    txid?: string; // Blockchain transaction ID when completed
+    userId?: string;
+    email?: string;
+    name?: string;
+    paymentType?: string;
+  };
+  created_at: Date;
+  updated_at: Date;
+}
+
+// In-memory storage for payment intents (would be a database in production)
+const paymentIntents: Record<string, PaymentIntent> = {};
+
+// Mock wallet addresses for different cryptocurrencies
+const MOCK_ADDRESSES: Record<string, string> = {
+  BTC: '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy',
+  ETH: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  LTC: 'LTdsVS8VDw6syvfQADdhf2PHAm3rMGJvTs',
+  DOGE: 'D5tpvRMT3jBgXteMTZ9YAUtaS7DKjMr5XT',
+  USDT: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+};
+
+class CryptoPaymentService {
+  /**
+   * Create a payment intent for crypto payment
+   */
+  async createPaymentIntent(
+    amount: number,
+    currency: string,
+    userId: string,
+    options: {
+      email?: string;
+      name?: string;
+      paymentType?: string;
+      coinType?: string;
+    } = {}
+  ): Promise<PaymentIntent> {
+    const { email, name, paymentType, coinType = 'BTC' } = options;
+    
+    // Generate a unique ID for the payment
+    const id = `pi_${uuidv4()}`;
+    
+    // Generate QR code URL (in production, this would be a real URL)
+    const qrcode_url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${MOCK_ADDRESSES[coinType]}`;
+    
+    // Create payment intent
+    const paymentIntent: PaymentIntent = {
+      id,
+      status: 'pending',
+      client_secret: `https://example.com/checkout/${id}`,
+      payment_method: coinType,
+      amount,
+      currency,
+      metadata: {
+        address: MOCK_ADDRESSES[coinType],
+        qrcode_url,
+        userId,
+        email,
+        name,
+        paymentType,
+      },
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+    
+    // Store the payment intent in memory (would be a database in production)
+    paymentIntents[id] = paymentIntent;
+    
+    return paymentIntent;
+  }
+  
+  /**
+   * Get the status of a payment intent
+   */
+  async getPaymentStatus(paymentIntentId: string): Promise<{
+    status: 'pending' | 'processing' | 'succeeded' | 'failed';
+    metadata?: any;
+  }> {
+    const paymentIntent = paymentIntents[paymentIntentId];
+    
+    if (!paymentIntent) {
+      throw new Error('Payment intent not found');
+    }
+    
+    // In a real implementation, this would check with the payment provider
+    // For our mock, we'll have a random chance to update the status
+    if (paymentIntent.status === 'pending') {
+      // 30% chance to move to processing
+      if (Math.random() < 0.3) {
+        paymentIntent.status = 'processing';
+        paymentIntent.updated_at = new Date();
+      }
+    } else if (paymentIntent.status === 'processing') {
+      // 50% chance to move to succeeded
+      if (Math.random() < 0.5) {
+        paymentIntent.status = 'succeeded';
+        paymentIntent.metadata = {
+          ...paymentIntent.metadata,
+          txid: `tx_${uuidv4()}`,
+        };
+        paymentIntent.updated_at = new Date();
+      }
+    }
+    
+    return {
+      status: paymentIntent.status,
+      metadata: paymentIntent.metadata,
+    };
+  }
+  
+  /**
+   * Verify an IPN message
+   * This would verify the signature from the payment provider in a real implementation
+   */
+  verifyIPNMessage(ipnData: any, hmacSignature: string): boolean {
+    // In a real implementation, this would verify the HMAC signature
+    // For our mock, we'll just return true
+    
+    // For production, you'd implement something like this:
+    // const payload = JSON.stringify(ipnData);
+    // const expectedSignature = crypto
+    //   .createHmac('sha512', process.env.COINPAYMENTS_IPN_SECRET || '')
+    //   .update(payload)
+    //   .digest('hex');
+    // return crypto.timingSafeEqual(Buffer.from(hmacSignature), Buffer.from(expectedSignature));
+    
+    return true;
+  }
+  
+  /**
+   * Simulate a webhook from the payment provider
+   * This would be called by the payment provider in a real implementation
+   */
+  simulateWebhook(paymentIntentId: string): {
+    success: boolean;
+    paymentIntent: PaymentIntent | null;
+  } {
+    const paymentIntent = paymentIntents[paymentIntentId];
+    
+    if (!paymentIntent) {
+      return { success: false, paymentIntent: null };
+    }
+    
+    // Simulate payment completion
+    paymentIntent.status = 'succeeded';
+    paymentIntent.metadata = {
+      ...paymentIntent.metadata,
+      txid: `tx_${uuidv4()}`,
+    };
+    paymentIntent.updated_at = new Date();
+    
+    return { success: true, paymentIntent };
+  }
+}
+
+export default new CryptoPaymentService();

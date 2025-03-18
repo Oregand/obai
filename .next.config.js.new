@@ -1,0 +1,29 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client'],
+  },
+  images: {
+    domains: [
+      'lh3.googleusercontent.com', 
+      'avatars.githubusercontent.com', 
+      'cryptologos.cc', 
+      'www.cryptologos.cc'
+    ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cryptologos.cc',
+        pathname: '/logos/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.cryptologos.cc',
+        pathname: '/logos/**',
+      }
+    ],
+  },
+}
+
+module.exports = nextConfig
