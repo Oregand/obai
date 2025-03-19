@@ -5,10 +5,15 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams?: { callbackUrl?: string } } = {}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/chat';
+  const searchParamsHook = useSearchParams();
+  
+  // Use either the prop or the hook value, with fallback to '/chat'
+  const callbackUrl = 
+    searchParams?.callbackUrl || 
+    searchParamsHook?.get('callbackUrl') || 
+    '/chat';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
