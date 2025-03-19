@@ -1,11 +1,15 @@
 'use client';
 
+import { PageProps } from '@/types/next';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
-export default function RegisterPage() {
+// Define the interface specifically for this page
+interface RegisterPageProps extends PageProps {}
+
+export default function RegisterPage({ searchParams = {} }: RegisterPageProps) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

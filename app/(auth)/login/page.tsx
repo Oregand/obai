@@ -1,17 +1,21 @@
 'use client';
 
+import { PageProps } from '@/types/next';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage({ searchParams }: { searchParams?: { callbackUrl?: string } } = {}) {
+// Define the interface specifically for this page
+interface LoginPageProps extends PageProps {}
+
+export default function LoginPage({ searchParams = {} }: LoginPageProps) {
   const router = useRouter();
   const searchParamsHook = useSearchParams();
   
   // Use either the prop or the hook value, with fallback to '/chat'
   const callbackUrl = 
-    searchParams?.callbackUrl || 
+    (typeof searchParams.callbackUrl === 'string' ? searchParams.callbackUrl : undefined) || 
     searchParamsHook?.get('callbackUrl') || 
     '/chat';
   const [email, setEmail] = useState('');
