@@ -4,6 +4,11 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
   },
+  // Set default runtime for API routes
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+    dynamicRoutes: ['/api/user/**', '/api/auth/**', '/api/chat/**', '/api/persona/**', '/api/tokens/**', '/api/subscriptions/**'],
+  },
   images: {
     domains: ['lh3.googleusercontent.com', 'avatars.githubusercontent.com', 'cryptologos.cc', 'www.cryptologos.cc', 'api.qrserver.com'],
     dangerouslyAllowSVG: true,
