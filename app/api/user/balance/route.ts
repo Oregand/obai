@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import TokenService from '@/lib/services/token-service';
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic';
+
 // GET /api/user/balance - Get user's token balance
 export async function GET(req: NextRequest) {
   try {

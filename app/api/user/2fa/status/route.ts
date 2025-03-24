@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import twoFactorService from '@/lib/services/two-factor-service';
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/user/2fa/status - Check if 2FA is enabled for the user
  */
