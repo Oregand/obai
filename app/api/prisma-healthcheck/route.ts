@@ -32,8 +32,8 @@ export async function GET(req: NextRequest) {
     const modelTests = {};
     
     // Test UserPaymentMethod specifically
-    let userPaymentMethodsCount = null;
-    let userPaymentMethodError = null;
+    let userPaymentMethodsCount: number | null = null;
+    let userPaymentMethodError: string | null = null;
     
     try {
       userPaymentMethodsCount = await prisma.userPaymentMethod.count();

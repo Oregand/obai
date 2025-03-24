@@ -13,9 +13,9 @@ export default function PersonaManagementPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [personas, setPersonas] = useState([]);
-  const [userPersonas, setUserPersonas] = useState([]);
-  const [publicPersonas, setPublicPersonas] = useState([]);
+  const [personas, setPersonas] = useState<{ id: string; name: string; description: string; imageUrl?: string; isPublic: boolean; isPremium?: boolean; createdBy: string; createdAt: string; dominanceLevel: number }[]>([]);
+  const [userPersonas, setUserPersonas] = useState<{ id: string; name: string; description: string; imageUrl?: string; isPublic: boolean; isPremium?: boolean; createdBy: string; createdAt: string; dominanceLevel: number }[]>([]);
+  const [publicPersonas, setPublicPersonas] = useState<{ id: string; name: string; description: string; imageUrl?: string; isPublic: boolean; isPremium?: boolean; createdBy: string; createdAt: string; dominanceLevel: number }[]>([]);
   const [filter, setFilter] = useState('all'); // all, mine, public
   const [subscriptionTier, setSubscriptionTier] = useState('free');
 
@@ -107,7 +107,7 @@ export default function PersonaManagementPage() {
   const formatRelativeTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     
     if (diffInSeconds < 60) {
       return 'just now';
@@ -252,7 +252,7 @@ export default function PersonaManagementPage() {
                         Private
                       </span>
                     )}
-                    {persona.createdBy === session.user.id && (
+                    {session?.user?.id && persona.createdBy === session.user.id && (
                       <span className="text-xs bg-purple-500 bg-opacity-20 text-purple-400 px-2 py-1 rounded">
                         Custom
                       </span>
@@ -266,7 +266,7 @@ export default function PersonaManagementPage() {
                       </button>
                     </Link>
                     
-                    {persona.createdBy === session.user.id && (
+                    {session?.user?.id && persona.createdBy === session.user.id && (
                       <div className="flex space-x-2">
                         <Link href={`/persona/edit/${persona.id}`}>
                           <button className="px-3 py-1.5 border border-white/20 text-white text-sm rounded hover:bg-white/10 transition-colors">

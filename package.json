@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build",
-    "build:strict": "prisma generate && prisma db push --accept-data-loss && tsc --noEmit && next build",
+    "build": "prisma generate && next build",
+    "build:strict": "prisma generate && tsc --noEmit && next build",
+    "build:with-db": "prisma generate && prisma db push --accept-data-loss && next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "prebuild": "npm run typecheck",
     "test": "jest --coverage",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
@@ -33,10 +36,12 @@
     "react-hot-toast": "^2.4.1",
     "react-markdown": "^9.0.1",
     "uuid": "^9.0.1",
-    "zod": "^3.22.4"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
     "@types/bcrypt": "^5.0.2",
     "@types/jest": "^29.5.12",
     "@types/node": "^20",

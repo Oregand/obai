@@ -243,7 +243,7 @@ const AutoTopupSettings: React.FC<AutoTopupSettingsProps> = ({ userId }) => {
               >
                 {TOKEN_PACKAGES.map((pkg) => (
                   <option key={pkg.id} value={pkg.id}>
-                    {pkg.name} - ${pkg.price} ({pkg.tokens} tokens {pkg.bonus > 0 ? `+ ${pkg.bonus} bonus` : ''})
+                    {pkg.name} - ${pkg.price} ({pkg.tokens} tokens {pkg.bonus && pkg.bonus > 0 ? `+ ${pkg.bonus} bonus` : ''})
                   </option>
                 ))}
               </select>
@@ -260,7 +260,7 @@ const AutoTopupSettings: React.FC<AutoTopupSettingsProps> = ({ userId }) => {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-white/70">Tokens:</span>
-                    <span className="text-white">{selectedPackage.tokens + selectedPackage.bonus}</span>
+                    <span className="text-white">{selectedPackage.tokens + (selectedPackage.bonus ?? 0)}</span>
                   </div>
                 </div>
               )}

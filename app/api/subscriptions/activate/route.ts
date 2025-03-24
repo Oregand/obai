@@ -44,11 +44,11 @@ export async function POST(req: NextRequest) {
     const result = await TokenService.activateSubscription(subscriptionId);
     
     return NextResponse.json({
-      success: true,
-      subscription: result.subscription,
-      bonusTokensAdded: result.bonusTokensAdded,
-      chatLimit: result.chatLimit,
-      tokenDiscount: result.tokenDiscount
+      success: result.success,
+      message: result.message,
+      bonusTokensAdded: 'bonusTokensAdded' in result ? result.bonusTokensAdded : null,
+      chatLimit: 'chatLimit' in result ? result.chatLimit : null,
+      tokenDiscount: 'tokenDiscount' in result ? result.tokenDiscount : null
     });
   } catch (error) {
     console.error('Error activating subscription:', error);

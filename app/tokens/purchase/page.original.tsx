@@ -232,7 +232,7 @@ export default function TokensPurchasePage() {
                     <div className="mt-4 text-center">
                       <div className="flex justify-center items-baseline">
                         <span className="text-3xl font-bold text-primary">{formatPrice(pkg.price)}</span>
-                        {pkg.savePercentage > 0 && (
+                        {(pkg.savePercentage ?? 0) > 0 && (
                           <span className="ml-2 text-sm text-white opacity-70">
                             Save {pkg.savePercentage}%
                           </span>
@@ -246,9 +246,9 @@ export default function TokensPurchasePage() {
                         <span className="ml-2 text-sm text-white opacity-70">tokens</span>
                       </div>
                       
-                      {pkg.bonus > 0 && (
+                      {(pkg.bonus ?? 0) > 0 && (
                         <div className="mt-1 text-sm text-primary font-medium">
-                          +{formatTokenCount(pkg.bonus)} bonus tokens
+                          +{formatTokenCount(pkg.bonus ?? 0)} bonus tokens
                         </div>
                       )}
                     </div>

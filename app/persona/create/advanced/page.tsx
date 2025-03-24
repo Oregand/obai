@@ -124,7 +124,7 @@ Remember to personalize your communication style based on the user's needs and q
       router.push('/persona');
     } catch (error) {
       console.error('Error creating persona:', error);
-      toast.error(error.message || 'Failed to create persona');
+      toast.error(error instanceof Error ? error.message : 'Failed to create persona');
     } finally {
       setIsSubmitting(false);
     }

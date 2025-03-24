@@ -111,8 +111,9 @@ export default function ChatInterface({ initialChat, personas, userChats, userId
     }
   };
 
-  const handleSelectChat = (chat: ChatWithPersona) => {
-    setCurrentChat(chat);
+  const handleSelectChat = (chatId: string) => {
+    const selectedChat = userChats.find((chat) => chat.id === chatId) || null;
+    setCurrentChat(selectedChat);
     setIsSidebarOpen(false);
   };
 
@@ -129,17 +130,20 @@ export default function ChatInterface({ initialChat, personas, userChats, userId
       <ChatSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        chats={userChats}
+        chats={userChats.map(({ updatedAt, ...rest }) => ({
+          ...rest,
+          updatedAt: updatedAt.toISOString(),
+        }))}
         personas={personas}
         onSelectChat={handleSelectChat}
-        onNewChat={handleCreateNewChat}
+        onNewChat={() => handleCreateNewChat(personas[0]?.id || '')}
         currentChatId={currentChat?.id}
       />
 
       <div className="flex flex-col flex-1 h-full overflow-hidden">
         <ChatHeader
           chatTitle={currentChat?.title || 'New Chat'}
-          personaName={currentChat?.persona.name || 'AI Assistant'}
+          persona={currentChat?.persona || { name: 'AI Assistant' }}
           onMenuClick={() => setIsSidebarOpen(true)}
         />
 

@@ -128,6 +128,34 @@ class MockCoinbasePaymentService {
   }
   
   /**
+   * Advance the payment status manually (for testing/debugging)
+   */
+  advancePaymentStatus(paymentIntentId: string): string {
+    const paymentIntent = paymentIntents[paymentIntentId];
+    
+    if (!paymentIntent) {
+      throw new Error('Payment intent not found');
+    }
+    
+    // Advance the status in a deterministic way
+    if (paymentIntent.status === 'pending') {
+      paymentIntent.status = 'processing';
+    } else if (paymentIntent.status === 'processing') {
+      paymentIntent.status = 'succeeded';
+      paymentIntent.metadata = {
+        ...paymentIntent.metadata,
+        txid: `tx_${uuidv4()}`,
+      };
+    } else if (paymentIntent.status === 'succeeded') {
+      // Already succeeded, do nothing
+    }
+    
+    paymentIntent.updated_at = new Date();
+    
+    return paymentIntent.status;
+  }
+  
+  /**
    * Verify a webhook signature
    */
   verifyWebhookSignature(payload: string, signature: string): boolean {

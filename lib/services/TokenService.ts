@@ -317,6 +317,102 @@ class TokenServiceImpl {
   }
 
   /**
+   * Get persona analytics data for a specific user
+   * @param userId The user ID
+   * @returns Analytics data for personas used by this user
+   */
+  async getUserPersonaAnalytics(userId: string) {
+    try {
+      const analytics = await prisma.personaUsage.findMany({
+        where: { userId },
+        include: {
+          persona: true
+        },
+        orderBy: {
+          timestamp: 'desc'
+        },
+        take: 50
+      });
+      
+      // Group and process analytics data
+      const result = analytics.reduce((acc, item) => {
+        const personaId = item.personaId;
+        
+        if (!acc[personaId]) {
+          acc[personaId] = {
+            personaId,
+            name: item.persona.name,
+            imageUrl: item.persona.imageUrl,
+            description: item.persona.description,
+            usageCount: 0,
+            uniqueUsers: 1,
+            messageCount: 0
+          };
+        }
+        
+        acc[personaId].usageCount += 1;
+        
+        return acc;
+      }, {} as Record<string, any>);
+      
+      return Object.values(result);
+    } catch (error) {
+      console.error('Error getting user persona analytics:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get persona analytics data for all personas
+   * @returns Analytics data for all personas
+   */
+  async getPersonaAnalytics() {
+    try {
+      // Get base persona data
+      const personas = await prisma.persona.findMany({
+        select: {
+          id: true,
+          name: true,
+          imageUrl: true,
+          description: true,
+          createdAt: true
+        }
+      });
+      
+      // Get analytics data
+      const analytics = await prisma.personaAnalytics.findMany({
+        orderBy: {
+          day: 'desc'
+        },
+        take: 30
+      });
+      
+      // Combine data
+      const result = personas.map(persona => {
+        const personaStats = analytics.filter(a => a.personaId === persona.id);
+        
+        return {
+          personaId: persona.id,
+          name: persona.name,
+          imageUrl: persona.imageUrl,
+          description: persona.description,
+          usageCount: personaStats.reduce((sum, stat) => sum + stat.usageCount, 0),
+          uniqueUsers: personaStats.reduce((sum, stat) => sum + stat.uniqueUsers, 0),
+          messageCount: personaStats.reduce((sum, stat) => sum + stat.messageCount, 0),
+          avgSessionDuration: personaStats.length > 0 
+            ? personaStats.reduce((sum, stat) => sum + stat.avgSessionDuration, 0) / personaStats.length
+            : 0
+        };
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting persona analytics:', error);
+      return [];
+    }
+  }
+
+  /**
    * Process a token purchase
    * @param userId The user ID
    * @param packageId The token package ID or 'custom'
@@ -362,7 +458,7 @@ class TokenServiceImpl {
           throw new Error('Invalid package ID');
         }
         tokenAmount = tokenPackage.tokens;
-        bonusTokens = tokenPackage.bonus;
+        bonusTokens = tokenPackage.bonus || 0;
         price = tokenPackage.price;
       }
 
@@ -426,6 +522,78 @@ class TokenServiceImpl {
   }
 
   /**
+   * Complete a token purchase after payment
+   * @param paymentId The payment ID
+   * @returns The completed purchase details
+   */
+  async completeTokenPurchase(paymentId: string) {
+    try {
+      // Find the payment
+      const payment = await prisma.payment.findUnique({
+        where: { id: paymentId },
+        select: {
+          id: true,
+          userId: true,
+          amount: true,
+          status: true,
+          tokensAmount: true,
+          bonusTokens: true
+        }
+      });
+      
+      if (!payment) {
+        throw new Error('Payment not found');
+      }
+      
+      if (payment.status === 'completed') {
+        return { 
+          success: true, 
+          message: 'Payment already completed', 
+          paymentId: payment.id 
+        };
+      }
+      
+      // Update payment status
+      await prisma.$transaction(async (tx) => {
+        // Update payment status
+        await tx.payment.update({
+          where: { id: paymentId },
+          data: {
+            status: 'completed',
+            completedAt: new Date()
+          }
+        });
+        
+        // Credit tokens to user account
+        const totalTokens = (payment.tokensAmount || 0) + (payment.bonusTokens || 0);
+        
+        await tx.user.update({
+          where: { id: payment.userId },
+          data: {
+            credits: {
+              increment: totalTokens
+            }
+          }
+        });
+      });
+      
+      return { 
+        success: true, 
+        message: 'Payment completed successfully', 
+        paymentId: payment.id 
+      };
+    } catch (error) {
+      console.error('Error completing token purchase:', error);
+      
+      if (error instanceof Error) {
+        throw new Error(`Failed to complete purchase: ${error.message}`);
+      }
+      
+      throw new Error('Failed to complete purchase');
+    }
+  }
+
+  /**
    * Create a subscription for a user
    * @param userId The user ID
    * @param tierId The subscription tier ID
@@ -442,6 +610,8 @@ class TokenServiceImpl {
     tier: string,
     price: number,
     nextBillingDate: string,
+    subscription?: any,
+    payment?: any,
     paymentUrl?: string
   }> {
     try {
@@ -533,6 +703,72 @@ class TokenServiceImpl {
       
       // Generic error
       throw new Error('Failed to create subscription. Please try again later.');
+    }
+  }
+  
+  /**
+   * Activate a subscription
+   * @param subscriptionId The subscription ID
+   * @returns The activation result
+   */
+  async activateSubscription(subscriptionId: string) {
+    try {
+      // Find the subscription
+      const subscription = await prisma.subscription.findUnique({
+        where: { id: subscriptionId },
+        select: {
+          id: true,
+          userId: true,
+          tier: true,
+          status: true,
+          bonusTokens: true,
+          endDate: true
+        }
+      });
+      
+      if (!subscription) {
+        throw new Error('Subscription not found');
+      }
+      
+      if (subscription.status === 'active') {
+        return { success: true, message: 'Subscription already active' };
+      }
+      
+      // Update subscription and user
+      await prisma.$transaction(async (tx) => {
+        // Update subscription status
+        await tx.subscription.update({
+          where: { id: subscriptionId },
+          data: {
+            status: 'active'
+          }
+        });
+        
+        // Update user subscription status
+        await tx.user.update({
+          where: { id: subscription.userId },
+          data: {
+            subscriptionStatus: subscription.tier,
+            subscriptionExpiry: subscription.endDate,
+            credits: {
+              increment: subscription.bonusTokens || 0
+            }
+          }
+        });
+      });
+      
+      return { 
+        success: true, 
+        message: 'Subscription activated successfully' 
+      };
+    } catch (error) {
+      console.error('Error activating subscription:', error);
+      
+      if (error instanceof Error) {
+        throw new Error(`Failed to activate subscription: ${error.message}`);
+      }
+      
+      throw new Error('Failed to activate subscription');
     }
   }
 }
