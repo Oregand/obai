@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.stories.tsx",
+    "**/tests/**"
+  ],
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false
+  }
+}

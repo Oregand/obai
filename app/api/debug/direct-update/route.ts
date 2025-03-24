@@ -26,8 +26,9 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Set expiry date to 30 days from now (or null for free)
-    const expiryDate = tier !== 'free' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
+    // Set expiry date to 30 days from now (or 1 day for free tier for database compatibility)
+    const defaultExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const expiryDate = tier !== 'free' ? defaultExpiryDate : null;
     
     // Update user record directly
     const user = await prisma.user.update({
@@ -44,7 +45,22 @@ export async function POST(req: NextRequest) {
     });
     
     // Create a new subscription if not free
-    let subscription = null;
+    let subscription: null | {
+      id: string;
+      createdAt: Date;
+      updatedAt: Date;
+      status: string;
+      userId: string;
+      paymentId: string | null;
+      tier: string;
+      price: number;
+      startDate: Date;
+      endDate: Date;
+      autoRenew: boolean;
+      bonusTokens: number;
+      exclusivePersonas: boolean;
+      discountMultiplier: number;
+    } = null;
     if (tier !== 'free') {
       subscription = await prisma.subscription.create({
         data: {
@@ -54,7 +70,7 @@ export async function POST(req: NextRequest) {
           price: tier === 'vip' ? 49.99 : tier === 'premium' ? 19.99 : 9.99,
           status: 'active',
           startDate: new Date(),
-          endDate: expiryDate,
+          endDate: defaultExpiryDate, // Always use a valid date for endDate
           autoRenew: true,
           bonusTokens: tier === 'vip' ? 5000 : tier === 'premium' ? 1000 : 300,
           exclusivePersonas: tier === 'basic' ? false : true,

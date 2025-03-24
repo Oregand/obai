@@ -292,7 +292,7 @@ export default function SubscriptionsPage() {
             <div className="text-center">
               <button
                 onClick={handlePurchase}
-                disabled={isSubmitting || (currentTier === selectedTier && currentTierExpiry && currentTierExpiry > new Date())}
+                disabled={isSubmitting || !!(currentTier === selectedTier && currentTierExpiry && currentTierExpiry > new Date())}
                 className="px-8 py-3 bg-primary text-white text-lg font-medium rounded-md hover:bg-primary-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto"
               >
                 {isSubmitting ? (

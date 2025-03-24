@@ -24,9 +24,10 @@ export default function DebugPage() {
       }
       
       setUserStatus(data);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching user status:', error);
-      toast.error(error.message || 'Failed to fetch user status');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch user status';
+      toast.error(errorMessage);
     } finally {
       setStatusLoading(false);
     }
@@ -40,7 +41,7 @@ export default function DebugPage() {
   }, [status]);
   
   // Direct update subscription
-  const handleDirectUpdate = async (tier) => {
+  const handleDirectUpdate = async (tier: string) => {
     if (!confirm(`Are you sure you want to set subscription directly to ${tier}?`)) {
       return;
     }
@@ -66,9 +67,10 @@ export default function DebugPage() {
       
       // Refresh status after update
       fetchUserStatus();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error updating subscription:', error);
-      toast.error(error.message || 'Failed to update subscription');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update subscription';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -98,9 +100,10 @@ export default function DebugPage() {
       
       // Refresh status after upgrade
       fetchUserStatus();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error upgrading subscription:', error);
-      toast.error(error.message || 'Failed to upgrade subscription');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upgrade subscription';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -153,7 +156,7 @@ export default function DebugPage() {
                   <div><strong>Expires:</strong> {userStatus.serviceSubscription?.expiresAt ? new Date(userStatus.serviceSubscription.expiresAt).toLocaleString() : 'none'}</div>
                   <div><strong>Features:</strong></div>
                   <ul className="list-disc pl-5">
-                    {userStatus.serviceSubscription?.features?.map((feature, index) => (
+                    {userStatus.serviceSubscription?.features?.map((feature: string, index: number) => (
                       <li key={index}>{feature}</li>
                     ))}
                   </ul>
@@ -165,7 +168,7 @@ export default function DebugPage() {
               <h3 className="font-medium mb-2">Active Subscriptions:</h3>
               {userStatus.dbSubscriptions?.length > 0 ? (
                 <div className="bg-gray-800 text-green-400 p-3 rounded text-sm overflow-auto">
-                  {userStatus.dbSubscriptions.map((sub, index) => (
+                  {userStatus.dbSubscriptions.map((sub: any, index: number) => (
                     <div key={index} className="mb-2 pb-2 border-b border-gray-700">
                       <div><strong>ID:</strong> {sub.id}</div>
                       <div><strong>Tier:</strong> {sub.tier}</div>

@@ -158,7 +158,7 @@ export default function EditPersonaPage({ params }: { params: { personaId: strin
       router.push('/persona');
     } catch (error) {
       console.error('Error updating persona:', error);
-      toast.error(error.message || 'Failed to update persona');
+      toast.error(error instanceof Error ? error.message : 'Failed to update persona');
     } finally {
       setIsSubmitting(false);
     }

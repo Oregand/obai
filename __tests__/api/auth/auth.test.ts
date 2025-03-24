@@ -29,8 +29,8 @@ describe('Authentication', () => {
   describe('Next Auth Configuration', () => {
     it('should have correct auth options configured', () => {
       // Test auth options configuration
-      expect(authOptions.session.strategy).toBe('jwt');
-      expect(authOptions.pages.signIn).toBe('/login');
+      expect(authOptions.session?.strategy).toBe('jwt');
+      expect(authOptions.pages?.signIn).toBe('/login');
       expect(authOptions.providers).toHaveLength(3); // Google, GitHub, Credentials
     });
 
@@ -173,23 +173,23 @@ describe('Authentication', () => {
         picture: 'profile.jpg',
       };
       
-      const result = await authOptions.callbacks.session({ session, token, user: null, newSession: null });
+      const result = await authOptions.callbacks?.session?.({ session, token, user: null as any, newSession: null as any, trigger: "update" });
       
-      expect(result.user.id).toBe(token.id);
-      expect(result.user.name).toBe(token.name);
-      expect(result.user.email).toBe(token.email);
-      expect(result.user.image).toBe(token.picture);
+      expect((result?.user as any)?.id).toBe(token.id);
+      expect(result?.user?.name).toBe(token.name);
+      expect(result?.user?.email).toBe(token.email);
+      expect(result?.user?.image).toBe(token.picture);
     });
 
     it('should properly set user ID in the JWT token', async () => {
       const token = {};
       const user = { id: 'user-123' };
       
-      const result = await authOptions.callbacks.jwt({ 
+      const result = await authOptions.callbacks?.jwt?.({ 
         token, 
         user: user as any,
         account: null,
-        profile: null,
+        profile: null as any,
         isNewUser: false,
         trigger: 'signIn'
       });

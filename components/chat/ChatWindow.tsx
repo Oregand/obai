@@ -181,7 +181,7 @@ export default function ChatWindow({ chatId }: ChatWindowProps) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden chat-container">
-      {chatInfo && <ChatHeader title={chatInfo.title} persona={chatInfo.persona} />}
+      {chatInfo && <ChatHeader chatTitle={chatInfo.title} persona={chatInfo.persona} onMenuClick={() => {}} />}
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (

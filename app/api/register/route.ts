@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     console.error("Registration error:", error);
     
     // Specific error handling for database connection issues
-    if (error.name === 'PrismaClientInitializationError') {
+    if (error instanceof Error && error.name === 'PrismaClientInitializationError') {
       return NextResponse.json(
         { 
           message: "Database connection error", 

@@ -116,11 +116,11 @@ export default function GuidedPersonaCreator() {
   
   // Selected traits
   const [selections, setSelections] = useState({
-    personality: [],
-    knowledge: [],
-    tone: [],
-    responseStyle: [],
-    rolePlay: []
+    personality: [] as string[],
+    knowledge: [] as string[],
+    tone: [] as string[],
+    responseStyle: [] as string[],
+    rolePlay: [] as string[]
   });
   
   // Freeform inputs
@@ -247,7 +247,7 @@ export default function GuidedPersonaCreator() {
       router.push('/persona');
     } catch (error) {
       console.error('Error creating persona:', error);
-      toast.error(error.message || 'Failed to create persona');
+      toast.error(error instanceof Error ? error.message : 'Failed to create persona');
     } finally {
       setIsSubmitting(false);
     }

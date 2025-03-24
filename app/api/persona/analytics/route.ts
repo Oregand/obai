@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import TokenService from '@/lib/services/token-service';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {

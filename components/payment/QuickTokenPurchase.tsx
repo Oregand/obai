@@ -145,7 +145,7 @@ export default function QuickTokenPurchase({
                   <div>
                     <span className="text-white">Tokens:</span>
                     <span className="text-white font-medium ml-1">{basicPackage.tokens}</span>
-                    {basicPackage.bonus > 0 && (
+                    {(basicPackage.bonus ?? 0) > 0 && (
                       <span className="text-primary ml-1">+{basicPackage.bonus} bonus</span>
                     )}
                   </div>
@@ -268,7 +268,7 @@ export default function QuickTokenPurchase({
                     <span className="text-white">{getSelectedOption()?.tokens}</span>
                   </div>
                   
-                  {getSelectedOption()?.bonus && getSelectedOption()?.bonus > 0 && (
+                  {getSelectedOption() && getSelectedOption()!.bonus > 0 && (
                     <div className="flex justify-between items-center mt-2">
                       <span className="text-white opacity-70">Bonus:</span>
                       <span className="text-primary">+{getSelectedOption()?.bonus}</span>

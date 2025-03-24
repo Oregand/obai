@@ -30,12 +30,28 @@ interface UserProfile {
 }
 
 interface ChatSidebarProps {
-  activeChat: string | null;
+  activeChat?: string | null;
+  currentChatId?: string | null;
   onSelectChat: (chatId: string) => void;
   onNewChat: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  chats?: Chat[];
+  personas?: any[];
 }
 
-export default function ChatSidebar({ activeChat, onSelectChat, onNewChat }: ChatSidebarProps) {
+export default function ChatSidebar({ 
+  activeChat, 
+  currentChatId, 
+  onSelectChat, 
+  onNewChat, 
+  isOpen = false,
+  onClose = () => {},
+  chats: providedChats,
+  personas = []
+}: ChatSidebarProps) {
+  // Use the active chat or current chat ID if provided
+  const activeChatId = activeChat || currentChatId;
   const { data: session } = useSession();
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +79,13 @@ export default function ChatSidebar({ activeChat, onSelectChat, onNewChat }: Cha
 
   // Function to fetch chats
   const fetchChats = useCallback(async () => {
+    // If chats are provided as props, use those instead of fetching
+    if (providedChats) {
+      setChats(providedChats);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       setIsLoading(true);
       setError(null);
@@ -86,7 +109,7 @@ export default function ChatSidebar({ activeChat, onSelectChat, onNewChat }: Cha
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [providedChats]);
 
   // Initial data loading
   useEffect(() => {
@@ -98,10 +121,10 @@ export default function ChatSidebar({ activeChat, onSelectChat, onNewChat }: Cha
 
   // Refresh data when active chat changes
   useEffect(() => {
-    if (session?.user?.id && activeChat) {
+    if (session?.user?.id && activeChatId) {
       fetchChats();
     }
-  }, [session?.user?.id, activeChat, fetchChats]);
+  }, [session?.user?.id, activeChatId, fetchChats]);
 
   // Periodically refresh user profile data (every 5 minutes)
   useEffect(() => {
@@ -129,7 +152,7 @@ export default function ChatSidebar({ activeChat, onSelectChat, onNewChat }: Cha
       
       setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
       
-      if (activeChat === chatId) {
+      if (activeChatId === chatId) {
         onSelectChat('');
       }
     } catch (error) {
@@ -169,7 +192,20 @@ export default function ChatSidebar({ activeChat, onSelectChat, onNewChat }: Cha
   };
 
   return (
-    <div className="h-full flex flex-col bg-midnight text-white">
+    <div className={`h-full flex flex-col bg-midnight text-white md:relative fixed inset-y-0 left-0 z-30 md:z-auto transition-transform transform ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+      {/* Close button for mobile */}
+      {isOpen && (
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 md:hidden text-white p-1 rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+          aria-label="Close sidebar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+      
       {/* Header */}
       <div className="p-4 border-b border-primary/30 flex justify-between items-center">
         <h1 className="m-0 text-2xl font-bold text-primary neon-text">OBAI</h1>
@@ -207,14 +243,17 @@ export default function ChatSidebar({ activeChat, onSelectChat, onNewChat }: Cha
           <ul className="list-none p-0 m-0 flex flex-col gap-2">
             {chats.map((chat) => (
               <li key={chat.id} className="m-0 p-0">
-                <button
+                <div
                   onClick={() => onSelectChat(chat.id)}
                   className={`w-full text-left p-3 rounded flex items-center justify-between ${
-                    activeChat === chat.id 
+                    activeChatId === chat.id 
                       ? 'bg-primary/10 border border-primary/30' 
                       : 'bg-transparent border border-transparent'
                   } cursor-pointer hover:bg-primary/5 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-dark`}
+                  role="button"
+                  tabIndex={0}
                   aria-label={`Select chat with ${getPersonaName(chat)}`}
+                  onKeyDown={(e) => e.key === 'Enter' && onSelectChat(chat.id)}
                 >
                   <div className="flex items-center max-w-[80%] overflow-hidden">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2 flex-shrink-0">
@@ -240,7 +279,7 @@ export default function ChatSidebar({ activeChat, onSelectChat, onNewChat }: Cha
                       <path d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                </button>
+                </div>
               </li>
             ))}
           </ul>

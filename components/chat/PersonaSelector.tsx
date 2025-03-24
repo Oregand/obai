@@ -10,17 +10,25 @@ interface Persona {
   id: string;
   name: string;
   description: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   isPublic: boolean;
 }
 
 interface PersonaSelectorProps {
   onSelect: (personaId: string) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   isLoading?: boolean;
+  personas?: Persona[];
+  currentPersonaId?: string;
 }
 
-export default function PersonaSelector({ onSelect, onCancel, isLoading = false }: PersonaSelectorProps) {
+export default function PersonaSelector({ 
+  onSelect, 
+  onCancel = () => {}, 
+  isLoading = false,
+  personas: providedPersonas,
+  currentPersonaId
+}: PersonaSelectorProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -32,6 +40,13 @@ export default function PersonaSelector({ onSelect, onCancel, isLoading = false 
 
   useEffect(() => {
     const fetchPersonas = async () => {
+      // If personas are provided as props, use those
+      if (providedPersonas) {
+        setPersonas(providedPersonas);
+        setIsLoadingPersonas(false);
+        return;
+      }
+      
       try {
         const response = await fetch('/api/persona');
         if (!response.ok) throw new Error('Failed to fetch personas');
@@ -66,7 +81,7 @@ export default function PersonaSelector({ onSelect, onCancel, isLoading = false 
     if (session?.user) {
       fetchSubscription();
     }
-  }, [session?.user]);
+  }, [session?.user, providedPersonas]);
 
   const filteredPersonas = personas.filter(persona => 
     (selectedTab === 'public' ? persona.isPublic : !persona.isPublic) &&

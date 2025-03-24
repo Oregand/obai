@@ -18,7 +18,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
   items = [], 
   homeIcon = true 
 }) => {
-  const pathname = usePathname();
+  const pathname = usePathname() || '';
   
   // If no items provided, generate from pathname
   const breadcrumbs = items.length > 0 

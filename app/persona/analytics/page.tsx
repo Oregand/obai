@@ -13,8 +13,19 @@ export default function PersonaAnalyticsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [analytics, setAnalytics] = useState([]);
-  const [userAnalytics, setUserAnalytics] = useState([]);
+  interface AnalyticsItem {
+    personaId: string;
+    name: string;
+    description?: string;
+    imageUrl?: string;
+    usageCount: number;
+    uniqueUsers?: number;
+    messageCount?: number;
+    avgSessionDuration?: number;
+  }
+
+  const [analytics, setAnalytics] = useState<AnalyticsItem[]>([]);
+  const [userAnalytics, setUserAnalytics] = useState<AnalyticsItem[]>([]);
   const [view, setView] = useState('user'); // 'user' or 'global'
   const [subscriptionTier, setSubscriptionTier] = useState('free');
 

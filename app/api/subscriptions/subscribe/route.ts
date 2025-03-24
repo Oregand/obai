@@ -31,7 +31,11 @@ export async function POST(req: NextRequest) {
     
     return NextResponse.json({ 
       success: true,
-      subscription: result.subscription,
+      subscription: result.subscription || {
+        id: result.subscriptionId,
+        tier: result.tier,
+        nextBillingDate: result.nextBillingDate
+      },
       payment: result.payment,
       tier: result.tier
     });
