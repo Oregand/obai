@@ -11,24 +11,24 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
-      <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-6">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center bg-[#121212]">
+      <h1 className="text-6xl font-bold text-[#FF0033] neon-text mb-6">
         OBAI
       </h1>
-      <p className="text-xl text-gray-700 dark:text-gray-300 max-w-2xl mb-10">
+      <p className="text-xl text-gray-300 max-w-2xl mb-10">
         Role-play with AI personas powered by Grok 3. Engage in immersive conversations with a variety of characters.
       </p>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Link
           href="/login"
-          className="px-8 py-3 text-lg font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          className="btn-primary"
         >
           Log In
         </Link>
         <Link
           href="/register"
-          className="px-8 py-3 text-lg font-medium rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition-colors"
+          className="btn-secondary"
         >
           Sign Up
         </Link>
@@ -65,10 +65,10 @@ function FeatureCard({
   emoji: string;
 }) {
   return (
-    <div className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+    <div className="flex flex-col items-center p-6 bg-midnight-darker rounded-xl shadow-md border border-midnight-light hover:border-primary hover:shadow-lg transition-all duration-200">
       <div className="text-4xl mb-4">{emoji}</div>
-      <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">{title}</h2>
-      <p className="text-gray-600 dark:text-gray-300 text-center">{description}</p>
+      <h2 className="text-xl font-semibold mb-2 text-white">{title}</h2>
+      <p className="text-gray-300 text-center">{description}</p>
     </div>
   );
 }
