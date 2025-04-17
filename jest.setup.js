@@ -36,6 +36,30 @@ jest.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
+// Mock next/server and the Request/Response objects
+jest.mock('next/server', () => {
+  return {
+    NextResponse: {
+      json: jest.fn((body) => ({
+        status: 200,
+        body,
+        headers: new Map(),
+      })),
+      redirect: jest.fn((url) => ({
+        status: 302,
+        headers: new Map([['Location', url]]),
+      })),
+    },
+  };
+});
+
+// Define a minimal Request implementation for the test environment
+global.Request = function MockRequest(url) {
+  this.url = url || 'http://localhost';
+  this.method = 'GET';
+  this.headers = new Map();
+};
+
 // Mock next-auth
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn(() => ({

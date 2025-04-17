@@ -9,6 +9,7 @@ jest.mock('next-auth/jwt', () => ({
   getToken: jest.fn(),
 }));
 
+// Mock Prisma and bcrypt before mocking auth since auth uses them
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
@@ -20,6 +21,82 @@ jest.mock('@/lib/prisma', () => ({
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
 }));
+
+// Create proper mocks for the auth tests
+jest.mock('@/lib/auth', () => {
+  // Get access to the mocked functions
+  const { prisma } = require('@/lib/prisma');
+  const { compare } = require('bcrypt');
+  
+  const mockCredentialsProvider = {
+    id: 'credentials',
+    name: 'Credentials',
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    authorize: jest.fn(async (credentials) => {
+      if (!credentials?.email || !credentials?.password) {
+        return null;
+      }
+
+      // Actually call the mocked findUnique so we can verify it was called with correct params
+      const user = await prisma.user.findUnique({
+        where: {
+          email: credentials.email,
+        },
+      });
+
+      if (!user || !user.password) {
+        return null;
+      }
+
+      // Actually call the mocked compare so we can verify it was called with correct params
+      const isPasswordValid = await compare(credentials.password, user.password);
+
+      if (!isPasswordValid) {
+        return null;
+      }
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      };
+    }),
+  };
+
+  return {
+    authOptions: {
+      adapter: {},
+      session: { strategy: 'jwt' },
+      pages: { signIn: '/login' },
+      providers: [
+        { id: 'google', name: 'Google' },
+        { id: 'github', name: 'GitHub' },
+        mockCredentialsProvider,
+      ],
+      callbacks: {
+        session: jest.fn(({ session, token }) => {
+          if (token) {
+            session.user.id = token.id;
+            session.user.name = token.name;
+            session.user.email = token.email;
+            session.user.image = token.picture;
+          }
+          return session;
+        }),
+        jwt: jest.fn(({ token, user }) => {
+          if (user) {
+            token.id = user.id;
+          }
+          return token;
+        }),
+      },
+    },
+  };
+});
 
 describe('Authentication', () => {
   beforeEach(() => {
