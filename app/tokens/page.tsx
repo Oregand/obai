@@ -7,12 +7,22 @@ import Link from 'next/link';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
+interface Transaction {
+  id: string;
+  type: string;
+  amount: number;
+  date: string;
+  description?: string;
+  relatedId?: string;
+}
+
 export default function TokensPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [error, setError] = useState<string | null>(null);
   
   // Fetch user's current token balance and transaction history
   useEffect(() => {
@@ -23,23 +33,29 @@ export default function TokensPage() {
         .then(data => {
           // Fix: Access the nested balance property
           setCurrentBalance(data.balance.balance);
-          setIsLoading(false);
         })
         .catch(error => {
           console.error('Error fetching balance:', error);
-          setIsLoading(false);
+          setError('Failed to load balance data');
         });
       
-      // In a real app, you would fetch transaction history
-      // For now, we'll use dummy data
-      const dummyTransactions = [
-        { id: 'txn_1', type: 'purchase', amount: 300, date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() },
-        { id: 'txn_2', type: 'used', amount: -50, date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
-        { id: 'txn_3', type: 'bonus', amount: 100, date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
-        { id: 'txn_4', type: 'used', amount: -75, date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
-      ];
-      
-      setTransactions(dummyTransactions);
+      // Fetch transaction history from our new API endpoint
+      fetch('/api/user/transactions')
+        .then(res => res.json())
+        .then(data => {
+          if (data.transactions) {
+            setTransactions(data.transactions);
+          } else {
+            setTransactions([]);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching transactions:', error);
+          setError('Failed to load transaction history');
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   }, [status]);
   
@@ -115,7 +131,13 @@ export default function TokensPage() {
         <div className="bg-midnight-lighter rounded-lg shadow-lg p-6">
           <h2 className="text-lg font-medium text-white mb-4">Transaction History</h2>
           
-          {transactions.length > 0 ? (
+          {error && (
+            <div className="text-center py-4 text-primary">
+              {error}
+            </div>
+          )}
+          
+          {!error && transactions.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -132,9 +154,11 @@ export default function TokensPage() {
                         {new Date(transaction.date).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 text-sm text-white">
-                        {transaction.type === 'purchase' && 'Token Purchase'}
-                        {transaction.type === 'used' && 'Used in Conversation'}
-                        {transaction.type === 'bonus' && 'Subscription Bonus'}
+                        {transaction.description || 
+                          (transaction.type === 'purchase' && 'Token Purchase') ||
+                          (transaction.type === 'used' && 'Used in Conversation') ||
+                          (transaction.type === 'bonus' && 'Subscription Bonus')
+                        }
                       </td>
                       <td className={`px-4 py-3 text-sm text-right ${
                         transaction.amount > 0 ? 'text-green-400' : 'text-primary'
@@ -148,7 +172,7 @@ export default function TokensPage() {
             </div>
           ) : (
             <div className="text-center py-6 text-white opacity-70">
-              No transactions yet. Purchase tokens to get started!
+              {!error && 'No transactions yet. Purchase tokens to get started!'}
             </div>
           )}
         </div>
